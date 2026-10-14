@@ -1,0 +1,26 @@
+from google.colab import files  # Imports Colab's file-upload tool.
+from PIL import Image  # Imports a tool for opening image files.
+import io  # Lets Python read the uploaded image bytes.
+
+uploaded = files.upload()  # Opens a file picker so you can select a picture from your computer.
+image_name = next(iter(uploaded))  # Gets the uploaded file's name.
+image = Image.open(io.BytesIO(uploaded[image_name])).convert("RGB")  # Opens the image and converts it to color RGB format.
+display(image)  # Shows the uploaded image in the notebook.
+
+image_transform = transforms.Compose([  # Defines the same basic preparation style used for CIFAR-10.
+    transforms.Resize((32, 32)),  # Resizes the picture to the model's expected 32×32 pixels.
+    transforms.ToTensor(),  # Converts pixels into a PyTorch tensor.
+])  # Finishes defining the image preparation steps.
+
+image_batch = image_transform(image).unsqueeze(0).to(device)  # Adds a batch dimension and moves the image to the GPU.
+model.eval()  # Switches the trained model into evaluation mode.
+
+with torch.no_grad():  # Turns off gradient tracking because we are only making a prediction.
+    logits, gate_weights = model(image_batch)  # Gets the category scores and expert weights for this picture.
+    probabilities = torch.softmax(logits, dim=1)  # Converts the scores into probabilities.
+
+predicted_id = probabilities.argmax(dim=1).item()  # Finds the category with the highest probability.
+confidence = probabilities[0, predicted_id].item()  # Gets the model's probability for that category.
+print("Predicted category:", train_full.classes[predicted_id])  # Prints the predicted CIFAR-10 category.
+print(f"Model confidence: {confidence:.1%}")  # Prints the probability assigned to its prediction.
+print("Expert weights:", gate_weights[0].cpu().tolist())  # Shows how the gate weighted the experts for this image.
